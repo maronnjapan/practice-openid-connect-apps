@@ -1,5 +1,5 @@
 {
-  "name": "openid-provider",
+  "name": "resource-server",
   "type": "module",
   "scripts": {
     "dev": "vite",
