@@ -34,3 +34,4 @@ lerna-debug.log*
 
 # prisma
 /src/generated/prisma
+/src/generated/fabbrica

@@ -9,6 +9,11 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+generator fabbrica {
+  provider = "prisma-fabbrica"
+  output   = "../src/generated/fabbrica"
+}
+
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
