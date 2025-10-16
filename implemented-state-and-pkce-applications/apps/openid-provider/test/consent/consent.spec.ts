@@ -59,6 +59,31 @@ describe('POST  /consent/:dynamicPath', () => {
         expect(code).toMatch(/^[a-zA-Z0-9-_.]+$/)
         expect(JSON.parse(value)).toEqual(saveValue)
     })
+    it('Authorization Code開始リクエスト時にstateが存在する場合、stateも付与した状態でリダイレクトされること', async () => {
+        const TEST_STATE = 'test-state'
+        const saveValue: AuthorizeRequestValue = {
+            scope: 'profile email',
+            clientId: 'test-client-id',
+            redirectUri: 'https://example.com/callback',
+            responseType: 'code',
+            state: TEST_STATE
+        }
+        await env.MY_KV_NAMESPACE.put(DYNAMIC_PATH, JSON.stringify(saveValue))
+
+        const res = await fetchTestApplication(`/consent/${DYNAMIC_PATH}`, {
+            method: 'POST',
+            body: new URLSearchParams({
+                consent: 'yes',
+                id: DYNAMIC_PATH
+            })
+        })
+
+        const redirectUrl = new URL(res.headers.get('Location') || '')
+        const state = redirectUrl.searchParams.get('state')
+
+        expect(res.status).toEqual(302)
+        expect(state).toEqual(TEST_STATE)
+    })
     it('リクエストのパスの値と、フォームで送られてきたidの値が異なる場合、エラー画面が表示されること', async () => {
         const saveValue: AuthorizeRequestValue = {
             scope: 'profile email',

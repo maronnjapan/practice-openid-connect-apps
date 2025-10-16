@@ -3,4 +3,5 @@ export interface AuthorizeRequestValue {
     clientId: string
     redirectUri: string
     responseType: 'code'
+    state?: string
 }

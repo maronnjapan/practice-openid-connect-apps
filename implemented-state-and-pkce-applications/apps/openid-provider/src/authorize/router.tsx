@@ -9,6 +9,7 @@ export const setUpAuthorizeRoute = (baseApp: typeof app) => {
         const redirectUri = c.req.query('redirect_uri') || ''
         const responseType = c.req.query('response_type') || ''
         const scope = c.req.query('scope') || ''
+        const state = c.req.query('state') || undefined
 
         /**
          * client_idとredirect_uriが存在しない場合、適切なクライアントからのリクエストか判断できない
@@ -78,7 +79,8 @@ export const setUpAuthorizeRoute = (baseApp: typeof app) => {
             scope,
             clientId,
             redirectUri,
-            responseType
+            responseType,
+            state
         }
         await c.env.MY_KV_NAMESPACE.put(dynamicPath,
             JSON.stringify(saveValue)

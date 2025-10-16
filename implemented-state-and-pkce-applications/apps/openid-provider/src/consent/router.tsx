@@ -51,6 +51,6 @@ export const setUpConsentRoute = (baseApp: typeof app) => {
             authorizeRequestValue
             , { expirationTtl: 300 }) // 5分間保存
         await c.env.MY_KV_NAMESPACE.delete(id) // 使い捨てなので削除する
-        return c.redirect(`${authorizeRequestJson.redirectUri}?code=${code}`)
+        return c.redirect(`${authorizeRequestJson.redirectUri}?code=${code}${authorizeRequestJson.state ? `&state=${authorizeRequestJson.state}` : ''}`) // stateが存在する場合は付与する
     })
 }

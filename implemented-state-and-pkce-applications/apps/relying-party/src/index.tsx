@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 
 export type Bindings = {
   MY_KV_NAMESPACE: KVNamespace
@@ -21,7 +22,12 @@ app.get('/start-authorize', async (c) => {
   const redirectUri = c.env.REDIRECT_URI
   const issuerUri = c.env.ISSUER_URI
   const state = crypto.randomUUID().replaceAll('-', '')
-  await c.env.MY_KV_NAMESPACE.put(state, 'true', { expirationTtl: 600 }) // stateの有効期限は10分
+  setCookie(c, 'oauth_state', state, {
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 600, // 10分
+    path: '/'
+  })
 
   return c.redirect(`${issuerUri}/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile email&state=${state}`)
 })
@@ -30,6 +36,13 @@ app.get('/callback', async (c) => {
   if (!code) {
     return c.html(<div>認可コードが存在しません</div>)
   }
+  const state = c.req.query('state')
+  const cookieState = getCookie(c, 'oauth_state')
+  if (!state || !cookieState || state !== cookieState) {
+    return c.html(<div>stateの検証に失敗しました</div>)
+  }
+  // 使用済みstateを削除
+  deleteCookie(c, 'oauth_state')
   const requestHeader = `Basic ${btoa(`${c.env.CLIENT_ID}:${c.env.CLIENT_SECRET}`)}`
   const body = new URLSearchParams()
   body.set('grant_type', 'authorization_code')

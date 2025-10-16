@@ -41,7 +41,17 @@ describe('/authorize', () => {
                 responseType: 'code'
             })
         })
+        it('クエリにstateが存在する場合、保存した値にstateが追加されること', async () => {
+            const TEST_STATE = 'test_state'
+            const res = await fetchTestApplication(`/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(TEST_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(TEST_SCOPE)}&state=${TEST_STATE}`)
+            const redirectPath = res.headers.get('location')!
+            const dynamicPath = redirectPath.replace('/consent/', '')
 
+            const result = await env.MY_KV_NAMESPACE.get(dynamicPath)
+
+            expect(res.status).toEqual(302)
+            expect(JSON.parse(result)).toHaveProperty('state', TEST_STATE)
+        })
     })
 
     describe('検証が失敗した場合のテストケース', () => {
