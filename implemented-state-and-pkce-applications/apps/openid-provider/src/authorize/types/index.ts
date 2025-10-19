@@ -3,5 +3,9 @@ export interface AuthorizeRequestValue {
     clientId: string
     redirectUri: string
     responseType: 'code'
-    state?: string
+    state?: string,
+    pkce?: {
+        code_challenge: string,
+        code_challenge_method: 'S256'
+    }
 }

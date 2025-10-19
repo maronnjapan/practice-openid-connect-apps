@@ -10,6 +10,8 @@ export const setUpAuthorizeRoute = (baseApp: typeof app) => {
         const responseType = c.req.query('response_type') || ''
         const scope = c.req.query('scope') || ''
         const state = c.req.query('state') || undefined
+        const codeChallenge = c.req.query('code_challenge') || undefined
+        const codeChallengeMethod = c.req.query('code_challenge_method') || undefined
 
         /**
          * client_idとredirect_uriが存在しない場合、適切なクライアントからのリクエストか判断できない
@@ -71,6 +73,17 @@ export const setUpAuthorizeRoute = (baseApp: typeof app) => {
         }
 
         /**
+         * PKCEに関するクエリの検証
+         * code_challengeとcode_challenge_methodの両方が存在する場合、code_challenge_methodの値がS256でない場合はエラー
+         * 片方だけ存在する場合もエラー
+         * 両方存在しない場合はPKCEを使用しないものとして扱う
+         * PKCEを必須にしたい場合は、code_challengeとcode_challenge_methodの両方が存在し、code_challenge_methodの値がS256であることを要求するようにする
+         */
+        if ((codeChallenge && codeChallengeMethod !== 'S256') || (!codeChallenge && codeChallengeMethod)) {
+            return c.html(<AuthorizeError error="invalid_request" description="PKCEのクエリが不正です" />, 400)
+        }
+
+        /**
          * ここまで到達した場合、検証が成功したことになるので、ユーザーに対して認可画面を表示する
          * 後続の処理のためにクエリの値を一時的に保存する
          */
@@ -80,7 +93,11 @@ export const setUpAuthorizeRoute = (baseApp: typeof app) => {
             clientId,
             redirectUri,
             responseType,
-            state
+            state,
+            pkce: codeChallenge && codeChallengeMethod ? {
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256'
+            } : undefined
         }
         await c.env.MY_KV_NAMESPACE.put(dynamicPath,
             JSON.stringify(saveValue)

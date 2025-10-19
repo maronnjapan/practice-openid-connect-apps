@@ -47,6 +47,7 @@ export const setUpTokenRoute = (baseApp: typeof app) => {
         const grantType = requestBody['grant_type']
         const code = requestBody['code']
         const redirectUri = requestBody['redirect_uri']
+        const codeVerifier = requestBody['code_verifier']
         // grant_typeがauthorization_codeでない場合、エラー
         if (grantType !== 'authorization_code') {
             return c.json({
@@ -77,6 +78,28 @@ export const setUpTokenRoute = (baseApp: typeof app) => {
                 error_description: 'redirect_uriが不正です'
             }, 400)
         }
+
+        // PKCEを使用している場合、code_verifierの検証を行う
+        if (authorizeRequestJson.pkce) {
+            if (!codeVerifier || typeof codeVerifier !== 'string') {
+                return c.json({
+                    error: 'invalid_request',
+                    error_description: 'code_verifierが存在しません'
+                }, 400)
+            }
+            // code_verifierをSHA-256でハッシュ化し、Base64URLエンコードする
+            const hashed = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier))
+            const base64UrlEncoded = encodeBase64Url(String.fromCharCode(...new Uint8Array(hashed)))
+            // ハッシュ化してエンコードした値とcode_challengeが一致しない場合、エラー
+            if (base64UrlEncoded !== authorizeRequestJson.pkce.code_challenge) {
+                return c.json({
+                    error: 'invalid_request',
+                    error_description: 'code_verifierが不正です'
+                }, 400)
+            }
+
+        }
+
         /**
          * ここまで到達した場合、検証が成功したことになるので、アクセストークンを発行する
          * アクセストークンの方式はBearerトークンとし、JWTで発行する

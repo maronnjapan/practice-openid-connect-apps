@@ -52,6 +52,18 @@ describe('/authorize', () => {
             expect(res.status).toEqual(302)
             expect(JSON.parse(result)).toHaveProperty('state', TEST_STATE)
         })
+        it('クエリにcode_challengeとcode_challenge_methodが存在する場合、保存した値にcode_challengeとcode_challenge_methodが追加されること', async () => {
+            const TEST_CODE_CHALLENGE = 'test_code_challenge'
+            const TEST_CODE_CHALLENGE_METHOD = 'S256'
+            const res = await fetchTestApplication(`/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(TEST_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(TEST_SCOPE)}&code_challenge=${TEST_CODE_CHALLENGE}&code_challenge_method=${TEST_CODE_CHALLENGE_METHOD}`)
+            const redirectPath = res.headers.get('location')!
+            const dynamicPath = redirectPath.replace('/consent/', '')
+
+            const result = await env.MY_KV_NAMESPACE.get(dynamicPath)
+
+            expect(res.status).toEqual(302)
+            expect(JSON.parse(result)).toHaveProperty('pkce', { code_challenge: TEST_CODE_CHALLENGE, code_challenge_method: TEST_CODE_CHALLENGE_METHOD })
+        })
     })
 
     describe('検証が失敗した場合のテストケース', () => {
@@ -119,6 +131,39 @@ describe('/authorize', () => {
 
             expect(res.status).toEqual(302)
             expect(redirectPath).toEqual(`${TEST_REDIRECT_URI}?error=invalid_scope`)
+        })
+        it('クエリにcode_challengeが存在し、code_challenge_methodが存在しない場合、エラー画面が表示されること', async () => {
+            const client = await clientFactory.create({
+                RedirectUri: { create: await redirectUriFactory.build({ uri: TEST_REDIRECT_URI }) },
+                Scope: { create: await scopeFactory.buildList(TEST_SCOPE.split(' ').map(s => ({ name: s }))) }
+            })
+            const res = await fetchTestApplication(`/authorize?client_id=${client.clientId}&redirect_uri=${encodeURIComponent(TEST_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(TEST_SCOPE)}&code_challenge=test_code_challenge`)
+            const text = await res.text()
+
+            expect(res.status).toEqual(400)
+            expect(text).toContain('invalid_request')
+        })
+        it('クエリにcode_challenge_methodが存在し、code_challengeが存在しない場合、エラー画面が表示されること', async () => {
+            const client = await clientFactory.create({
+                RedirectUri: { create: await redirectUriFactory.build({ uri: TEST_REDIRECT_URI }) },
+                Scope: { create: await scopeFactory.buildList(TEST_SCOPE.split(' ').map(s => ({ name: s }))) }
+            })
+            const res = await fetchTestApplication(`/authorize?client_id=${client.clientId}&redirect_uri=${encodeURIComponent(TEST_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(TEST_SCOPE)}&code_challenge_method=S256`)
+            const text = await res.text()
+
+            expect(res.status).toEqual(400)
+            expect(text).toContain('invalid_request')
+        })
+        it('クエリにcode_challenge_methodが存在し、code_challenge_methodの値がS256でない場合、エラー画面が表示されること', async () => {
+            const client = await clientFactory.create({
+                RedirectUri: { create: await redirectUriFactory.build({ uri: TEST_REDIRECT_URI }) },
+                Scope: { create: await scopeFactory.buildList(TEST_SCOPE.split(' ').map(s => ({ name: s }))) }
+            })
+            const res = await fetchTestApplication(`/authorize?client_id=${client.clientId}&redirect_uri=${encodeURIComponent(TEST_REDIRECT_URI)}&response_type=code&scope=${encodeURIComponent(TEST_SCOPE)}&code_challenge=test_code_challenge&code_challenge_method=invalid`)
+            const text = await res.text()
+
+            expect(res.status).toEqual(400)
+            expect(text).toContain('invalid_request')
         })
     })
 })
