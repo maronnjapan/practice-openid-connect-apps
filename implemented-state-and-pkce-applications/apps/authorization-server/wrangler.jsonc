@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "openid-provider",
+  "name": "authorization-server",
   "main": "src/index.ts",
   "compatibility_date": "2025-09-28",
   // "compatibility_flags": [
@@ -24,7 +24,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "openid-provider",
+      "database_name": "authorization-server",
       "database_id": "id"
     }
   ]

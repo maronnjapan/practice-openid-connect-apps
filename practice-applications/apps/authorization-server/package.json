@@ -1,5 +1,5 @@
 {
-  "name": "openid-provider",
+  "name": "authorization-server",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

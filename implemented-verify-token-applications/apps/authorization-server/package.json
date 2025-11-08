@@ -1,13 +1,14 @@
 {
-  "name": "openid-provider",
+  "name": "authorization-server",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
-    "db:apply:local": "prisma db push && wrangler d1 migrations apply openid-provider --local",
-    "db:seed:local": "wrangler d1 execute openid-provider --local --file=./seeds/seed.sql",
+    "db:apply:local": "prisma db push && wrangler d1 migrations apply authorization-server --local",
+    "db:seed:local": "wrangler d1 execute authorization-server --local --file=./seeds/seed.sql",
     "db:setup:local": "cp .env.example .env && npm run db:apply:local && npm run db:seed:local",
+    "generate-keys": "node ./scripts/generate-private-key.cjs",
     "test": "vitest run"
   },
   "dependencies": {
