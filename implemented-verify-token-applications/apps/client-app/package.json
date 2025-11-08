@@ -1,5 +1,5 @@
 {
-  "name": "relying-party",
+  "name": "client-app",
   "type": "module",
   "scripts": {
     "dev": "vite",
