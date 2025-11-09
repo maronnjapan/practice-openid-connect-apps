@@ -124,7 +124,8 @@ export const setUpTokenRoute = (baseApp: typeof app) => {
         // JWT用のヘッダーとペイロードを作成
         const tokenHeader = {
             alg: 'ES256',
-            typ: "JWT"
+            typ: "JWT",
+            kid: '1'
         }
         const tokenPayload = {
             exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour expiration

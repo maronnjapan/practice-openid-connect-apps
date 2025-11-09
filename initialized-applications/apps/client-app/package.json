@@ -2,7 +2,7 @@
   "name": "client-app",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "cp .env.example .env && vite",
     "build": "vite build",
     "preview": "$npm_execpath run build && vite preview",
     "deploy": "$npm_execpath run build && wrangler deploy",

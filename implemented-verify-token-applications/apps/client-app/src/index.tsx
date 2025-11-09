@@ -44,7 +44,7 @@ app.get('/start-authorize', async (c) => {
   const base64CodeChallenge = btoa(String.fromCharCode(...new Uint8Array(codeChallenge))).replaceAll('=', '').replaceAll('+', '-').replaceAll('/', '_')
 
   // クエリにcode_challengeと変換ロジックを示すcode_challenge_methodを付与する
-  return c.redirect(`${issuerUri}/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile email&state=${state}&code_challenge=${base64CodeChallenge}&code_challenge_method=S256`)
+  return c.redirect(`${issuerUri}/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=profile email read:resource&state=${state}&code_challenge=${base64CodeChallenge}&code_challenge_method=S256`)
 })
 app.get('/callback', async (c) => {
   const code = c.req.query('code')
@@ -87,10 +87,51 @@ app.get('/callback', async (c) => {
     return c.html(<div>トークンエンドポイントの呼び出しに失敗しました</div>)
   }
   const tokenJson = await tokenRes.json()
-  return c.html(
+  const tokenKey = `token_key`
+  const tokenKvKey = `token_kv_${crypto.randomUUID()}`
+  await c.env.MY_KV_NAMESPACE.put(tokenKvKey, JSON.stringify(tokenJson), {
+    expirationTtl: 600 // 10分
+  })
+  setCookie(c, tokenKey, tokenKvKey, {
+    httpOnly: true,
+    sameSite: 'Lax',
+    maxAge: 600, // 10分
+    path: '/'
+  })
+
+  return c.render(
     <div>
       <h1>アクセストークンを取得しました</h1>
       <pre>{JSON.stringify(tokenJson, null, 2)}</pre>
+      <a href='/fetch-resource'>リソースサーバーから保護されたリソースを取得する</a>
+    </div>
+  )
+})
+
+app.get('/fetch-resource', async (c) => {
+  const tokenKvKey = getCookie(c, 'token_key')
+  if (!tokenKvKey) {
+    return c.html(<div>トークンが存在しません</div>)
+  }
+
+  const tokenJson = await c.env.MY_KV_NAMESPACE.get(tokenKvKey)
+  if (!tokenJson) {
+    return c.html(<div>トークンが無効です</div>)
+  }
+
+  const res = await fetch('http://localhost:8789/api/resource', {
+    headers: {
+      'Authorization': `Bearer ${JSON.parse(tokenJson).access_token}`
+    }
+  })
+  if (!res.ok) {
+    return c.html(<div>リソースサーバーからのレスポンス取得に失敗しました: {res.status}</div>)
+  }
+  const resJson = await res.json()
+  return c.render(
+    <div>
+      <h1>リソースサーバーからのレスポンス</h1>
+      <pre>{JSON.stringify(resJson, null, 2)}</pre>
     </div>
   )
 })

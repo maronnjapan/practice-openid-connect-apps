@@ -3,6 +3,8 @@ import { prismaMiddleware } from './middlewares/setup-prisma.middleware'
 import { setUpAuthorizeRoute } from './authorize/router'
 import { setUpConsentRoute } from './consent/router'
 import { setUpTokenRoute } from './token/router'
+import { setUpWellKnownRoutes } from './.well-known/router'
+
 
 export type Bindings = {
   DB: D1Database
@@ -17,5 +19,6 @@ app.use('*', prismaMiddleware)
 setUpAuthorizeRoute(app)
 setUpConsentRoute(app)
 setUpTokenRoute(app)
+setUpWellKnownRoutes(app)
 
 export default app

@@ -17,6 +17,7 @@ VALUES ('ruri_seed_1', 'http://localhost:8788/callback', 'cli_seed_1');
 
 INSERT INTO "Scope" ("id", "name", "clientId") VALUES
 	('scp_profile', 'profile', 'cli_seed_1'),
+	('scp_read_resource', 'read:resource', 'cli_seed_1'),
 	('scp_email',   'email',   'cli_seed_1');
 
 COMMIT;
