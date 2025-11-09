@@ -3,14 +3,7 @@ import { Hono } from 'hono'
 const base64UrlDecode = (str: string) => {
     /**  URLで使用可能な形式にエンコードされた文字列を元のBase64で使用される文字列に置換 */
     const replaceStr = str.replace(/-/g, '+').replace(/_/g, '/');
-    /**
-     * Base64の文字数が4の倍数になるようにパディング文字列を追加
-     * パディング文字列は'='である
-     * パディングについての記事
-     * https://qiita.com/yagaodekawasu/items/bd8a1db4529cfc921bba
-     */
-    const padding = Array(replaceStr.length * 8 % 6).map(() => '=').join('');
-    return atob(`${replaceStr}${padding}`);
+    return atob(replaceStr);
 }
 
 type Bindings = {
